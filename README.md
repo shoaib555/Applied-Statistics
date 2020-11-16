@@ -1,4 +1,5 @@
 # Applied-Statistics
+# Project link: https://nbviewer.jupyter.org/github/shoaib555/Applied-Statistics/blob/main/Applied%20statistics.ipynb
 # Data Description:
 The data at hand contains medical costs of people characterized by certain
 attributes.
