@@ -1,0 +1,147 @@
+ 
+# Applied Statistics Project
+```{r}
+rm(list=ls())
+ins=read.csv("insurance.csv")
+str(ins)
+```
+
+```{r}
+summary(ins)
+```
+
+```{r}
+sapply(ins, function(x) sum(is.na(x)))
+```
+
+
+```{r}
+library(ggplot2)
+library(dplyr)
+library(cowplot)
+a=ins%>%ggplot(aes(bmi))+geom_histogram(aes(y=..density..),bins=30,colour="black", fill="blue",alpha=0.2)+geom_density(alpha=.2, fill="blue")+ylab("Frequency")+ggtitle("Distribution of BMI")+xlab("BMI")
+
+b=ins%>%ggplot(aes(age))+geom_histogram(aes(y=..density..),bins=10,colour="black", fill="blue",alpha=0.2)+geom_density(alpha=.2, fill="blue")+ylab("Frequency")+ggtitle("Distribution of Age")+xlab("Age")
+
+c=ins%>%ggplot(aes(charges))+geom_histogram(aes(y=..density..),bins=30,colour="black", fill="blue",alpha=0.2)+geom_density(alpha=.2, fill="blue")+ylab("Frequency")+ggtitle("Distribution of Charges")+xlab("Charges")
+
+plot_grid(a,b,c,labels = "AUTO")
+```
+
+
+```{r}
+library(moments)
+skewness(ins$bmi)
+skewness(ins$age)
+skewness(ins$charges)
+```
+
+```{r}
+library(cowplot)
+a=ins%>%ggplot(aes(bmi))+geom_boxplot(fill="blue")+coord_flip()+ggtitle("Boxplot for Bmi")
+b=ins%>%ggplot(aes(age))+geom_boxplot(fill="blue")+coord_flip()+ggtitle("Boxplot for Age")
+c=ins%>%ggplot(aes(charges))+geom_boxplot(fill="blue")+coord_flip()+ggtitle("Boxplot for Charges")
+plot_grid(a,b,c,labels = "AUTO")
+```
+
+
+```{r}
+table(ins$sex)
+table(ins$children)
+table(ins$smoker)
+table(ins$region)
+```
+
+```{r}
+a=ins%>%ggplot(aes(sex),fill=sex)+geom_bar(aes(fill=sex))+ggtitle("Distribution of sex")+guides(fill=F)
+b=ins%>%ggplot(aes(as.factor(children)),fill=as.factor(children))+geom_bar(aes(fill=as.factor(children)))+ggtitle("Distribution of children")+xlab("Children")+guides(fill=F)
+c=ins%>%ggplot(aes(region),fill=sex)+geom_bar(aes(fill=region))+ggtitle("Distribution of regions")+guides(fill=F)
+d=ins%>%ggplot(aes(smoker),fill=sex)+geom_bar(aes(fill=smoker))+ggtitle("Distribution of smoker")+guides(fill=F)
+plot_grid(a,b,c,d)
+```
+
+```{r}
+pairs(ins,pch=21,col="blue",main="Pair plot for all variable")
+```
+
+```{r}
+a=ins%>%ggplot(aes(charges,fill=sex))+geom_histogram(bins=10,col="black")+facet_grid(.~sex)+guides(fill=F)+ggtitle("charges vs gender")
+ins%>%group_by(sex)%>%summarize(avg=mean(charges))
+b=ins%>%ggplot(aes(bmi,fill=sex))+geom_histogram(bins=10,col="black")+facet_grid(.~sex)+guides(fill=F)+ggtitle("bmi vs gender")
+c=ins%>%ggplot(aes(charges,fill=smoker))+geom_histogram(bins=10,col="black")+facet_grid(.~smoker)+guides(fill=F)+ggtitle("charges vs smoker")
+d=ins%>%ggplot(aes(sex,charges))+geom_bar(stat="identity",position = position_dodge(),aes(fill=smoker))+ggtitle("charges vs gender")
+e=ins%>%ggplot(aes(smoker),fill=sex)+geom_bar(aes(fill=smoker))+facet_grid(.~sex)+ggtitle("Distribution of smoker across gender")+guides(fill=F)
+f=ins%>%filter(sex=="female")%>%ggplot(aes(bmi))+geom_histogram(bins=10,fill="blue",color="black")+facet_wrap(.~children)+ggtitle("bmi for females against number of children")
+plot_grid(a,b,c,d,e,f)
+```
+
+```{r}
+a=ins%>%filter(sex=="female")%>%ggplot(aes(as.factor(children),bmi,fill=as.factor(children)))+geom_boxplot()+xlab("children")+theme(legend.position="none")+ggtitle("Bos[plot for females aginst the number of children")
+
+b=ins%>%ggplot(aes(smoker,charges,fill=smoker))+geom_boxplot()+facet_grid(.~sex)+ggtitle("smoker vs charges against sex")
+ plot_grid(a,b)
+```
+
+```{r}
+#a. Do charges of people who smoke differ significantly from the people who don't?
+#To answer the above question we shall use two sample t-test
+  #Ho (Null): The charges across smoker and non-smokers are equal
+  # Ha (Alternative) : The charges across smoker and non-smokers are unequal
+
+tt=t.test(charges~smoker,ins,var.equal = T)
+tt
+
+tt1=t.test(charges~smoker,ins,var.equal = F)
+tt1
+
+#As the p-value is close to zero it can concluded that the charges are significantly different from a smoker to a non-smoker
+```
+
+```{r}
+#b. Does bmi of males differ significantly from that of females
+#To answer the above question we shall two sample t-test.
+    #Ho (Null): The charges BMI across gender are equal
+    #Ha (Alternative) : The BMI across gender are unequal
+
+tt=t.test(bmi~sex,ins,var.equal = T)
+tt
+
+tt1=t.test(bmi~sex,ins,var.equal = F)
+tt1
+
+#As the p-value is greater than 0.05 it can be concluded that there is no significant difference in bmi between geneder
+```
+
+```{r}
+#c. Is the proportion of smokers significantly different in different genders
+#To answer the above question we shall use Z-test of proprtion.
+   #Ho (Null): The proportion of smokers is the same in both categories - males and females
+   #Ha (Alternative) : The proportion of smokers is significantly different in both categories - males and females
+
+prop.table(table(ins$sex,ins$smoker))
+
+table(ins$sex,ins$smoker)
+table(ins$sex)
+res=prop.test(x=c(159,115),n=c(676,662),alternative = "two.sided")
+res
+
+#As the p-value is close to zero it can be concluded that the proportion of smokers differ significantly across gende
+```
+
+```{r}
+#d.Is the distribution of bmi across women with no children, one child and two children, the same
+#To answer the above question we shall use one-way anova
+     #Ho (Null): The average BMI across categories are the same
+     #Ha (Alternative) : The average BMI across categories are not the same
+fe=ins%>%filter(sex=="female" & (children==0 | children==1 | children==2 ))
+fe$children=as.factor(fe$children)
+an=aov(bmi~children,data=fe)
+summary(an)
+
+#As the P-value is larger than 0.05 we fail to reject the null hypothesis and conclude that the average bmi across categories of women with 0,1,2 #children are the same.
+```
+
+```{r}
+q()
+```
+
